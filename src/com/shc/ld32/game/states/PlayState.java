@@ -1,23 +1,18 @@
 package com.shc.ld32.game.states;
 
-import com.shc.ld32.game.entities.Blades;
-import com.shc.ld32.game.entities.EnemyBlades;
+import com.shc.ld32.game.Resources;
 import com.shc.ld32.game.entities.EnemyRobot;
-import com.shc.ld32.game.entities.EnemySocks;
 import com.shc.ld32.game.entities.Floor;
 import com.shc.ld32.game.entities.PlayerRobot;
-import com.shc.ld32.game.entities.Socks;
 import com.shc.silenceengine.collision.broadphase.DynamicTree2D;
 import com.shc.silenceengine.collision.colliders.SceneCollider2D;
-import com.shc.silenceengine.core.Game;
 import com.shc.silenceengine.core.GameState;
-import com.shc.silenceengine.core.SilenceEngine;
 import com.shc.silenceengine.graphics.Batcher;
-import com.shc.silenceengine.graphics.Color;
-import com.shc.silenceengine.graphics.Graphics2D;
-import com.shc.silenceengine.input.Keyboard;
+import com.shc.silenceengine.graphics.opengl.Primitive;
+import com.shc.silenceengine.graphics.opengl.Texture;
 import com.shc.silenceengine.math.Vector2;
 import com.shc.silenceengine.scene.Scene;
+import com.shc.silenceengine.utils.FileUtils;
 
 /**
  * @author Sri Harsha Chilakapati
@@ -25,26 +20,19 @@ import com.shc.silenceengine.scene.Scene;
 public class PlayState extends GameState
 {
     public static Scene SCENE;
-    public static PlayerRobot PLAYER_ROBOT;
-
-    public static int PLAYER_HEALTH;
-    public static int ENEMY_HEALTH;
 
     private SceneCollider2D collider;
 
+    public static float LEVEL_WIDTH;
+    public static float LEVEL_HEIGHT;
+
     public PlayState()
     {
-        PLAYER_HEALTH = ENEMY_HEALTH = 100;
+        LEVEL_WIDTH = LEVEL_HEIGHT = 0;
 
         SCENE = new Scene();
         {
-            for (float x = -480; x < 1280; x += 48)
-            {
-                SCENE.addChild(new Floor(new Vector2(x, 600-48)));
-            }
-
-            SCENE.addChild(PLAYER_ROBOT = new PlayerRobot(new Vector2(2*48, -5*48)));
-            SCENE.addChild(new EnemyRobot(new Vector2(800-4*48, -5*48)));
+            loadLevel("levels/level1.lvl");
         }
         SCENE.init();
 
@@ -52,42 +40,74 @@ public class PlayState extends GameState
         collider.setScene(SCENE);
 
         collider.register(PlayerRobot.class, Floor.class);
-        collider.register(PlayerRobot.class, EnemyRobot.class);
-        collider.register(PlayerRobot.class, EnemyBlades.class);
-        collider.register(PlayerRobot.class, EnemySocks.class);
+    }
 
-        collider.register(EnemyRobot.class, Floor.class);
-        collider.register(EnemyRobot.class, Blades.class);
-        collider.register(EnemyRobot.class, Socks.class);
+    private void loadLevel(String resourceName)
+    {
+        String[] lines = FileUtils.readLinesToStringArray(FileUtils.getResource(resourceName));
+
+        float x = 0, y = 0;
+
+        for (String line : lines)
+        {
+            if (line.startsWith("#"))
+                continue;
+
+            for (char c : line.toCharArray())
+            {
+                switch (c)
+                {
+                    case 'F':
+                        SCENE.addChild(new Floor(new Vector2(x, y)));
+                        break;
+
+                    case 'R':
+                        SCENE.addChild(new PlayerRobot(new Vector2(x, y)));
+                        break;
+
+                    case 'E':
+                        SCENE.addChild(new EnemyRobot(new Vector2(x, y)));
+                        break;
+                }
+
+                x += 48;
+                LEVEL_WIDTH = Math.max(LEVEL_WIDTH, x);
+            }
+
+            y += 48;
+            x = 0;
+
+            LEVEL_HEIGHT = y;
+        }
     }
 
     @Override
     public void update(float delta)
     {
-        if (Keyboard.isClicked(Keyboard.KEY_ESCAPE))
-            Game.setGameState(new PauseState(this));
-
         SCENE.update(delta);
         collider.checkCollisions();
-
-        PLAYER_HEALTH = Math.max(PLAYER_HEALTH, 0);
-        ENEMY_HEALTH  = Math.max(ENEMY_HEALTH, 0);
-
-        if (PLAYER_HEALTH == 0)
-            Game.setGameState(new EnemyWinState());
-
-        if (ENEMY_HEALTH == 0)
-            Game.setGameState(new PlayerWinState());
     }
 
     @Override
     public void render(float delta, Batcher batcher)
     {
-        SCENE.render(delta, batcher);
+        Resources.BACKGROUND.bind();
 
-        Graphics2D g2d = SilenceEngine.graphics.getGraphics2D();
-        g2d.setColor(Color.BLACK);
-        g2d.drawString("Player Health: " + PLAYER_HEALTH, 10, 10);
-        g2d.drawString("\nEnemy Health: " + ENEMY_HEALTH, 10, 10);
+        batcher.begin(Primitive.TRIANGLE_FAN);
+        {
+            batcher.vertex(-1, 1);
+            batcher.texCoord(0, 0);
+            batcher.vertex(1, 1);
+            batcher.texCoord(1, 0);
+            batcher.vertex(1, -1);
+            batcher.texCoord(1, 1);
+            batcher.vertex(-1, -1);
+            batcher.texCoord(0, 1);
+        }
+        batcher.end();
+
+        Texture.EMPTY.bind();
+
+        SCENE.render(delta, batcher);
     }
 }

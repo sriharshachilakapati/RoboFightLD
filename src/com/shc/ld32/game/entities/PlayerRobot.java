@@ -1,19 +1,16 @@
 package com.shc.ld32.game.entities;
 
-import com.shc.ld32.game.Direction;
+import com.shc.ld32.game.Main;
 import com.shc.ld32.game.Resources;
 import com.shc.ld32.game.states.PlayState;
-import com.shc.ld32.game.states.TutorialState;
-import com.shc.silenceengine.core.Game;
 import com.shc.silenceengine.core.SilenceEngine;
 import com.shc.silenceengine.graphics.Batcher;
 import com.shc.silenceengine.graphics.Graphics2D;
+import com.shc.silenceengine.graphics.cameras.OrthoCam;
 import com.shc.silenceengine.input.Keyboard;
 import com.shc.silenceengine.math.Vector2;
 import com.shc.silenceengine.math.geom2d.Rectangle;
-import com.shc.silenceengine.scene.Scene;
 import com.shc.silenceengine.scene.entity.Entity2D;
-import com.shc.silenceengine.utils.MathUtils;
 import com.shc.silenceengine.utils.TimeUtils;
 
 /**
@@ -21,11 +18,14 @@ import com.shc.silenceengine.utils.TimeUtils;
  */
 public class PlayerRobot extends Entity2D
 {
+    private enum Direction
+    {
+        LEFT, RIGHT
+    }
+
     private boolean inJump;
     private boolean onGround;
-    private float   jumpTime;
-
-    private boolean inShield;
+    private float jumpTime;
 
     private Direction direction;
 
@@ -43,24 +43,8 @@ public class PlayerRobot extends Entity2D
     @Override
     public void update(float delta)
     {
-        inShield = Keyboard.isPressed(Keyboard.KEY_DOWN);
-
-        if (!inShield)
-        {
-            Scene scene = Game.getGameState() instanceof PlayState ? PlayState.SCENE : TutorialState.SCENE;
-
-            if (Keyboard.isClicked(Keyboard.KEY_RIGHT))
-            {
-                scene.addChild(new Blades(getCenter(), direction == Direction.RIGHT ? 10 : -10));
-                Resources.SHOOT.play();
-            }
-
-            if (Keyboard.isClicked(Keyboard.KEY_UP))
-            {
-                scene.addChild(new Socks(getCenter(), direction == Direction.RIGHT ? 6 : -6));
-                Resources.SHOOT.play();
-            }
-        }
+        if (Keyboard.isClicked(Keyboard.KEY_RIGHT))
+            PlayState.SCENE.addChild(new Blade(getCenter(), direction == Direction.RIGHT ? 6 : -6));
 
         Vector2 velocity = getVelocity();
         velocity.set(0, 0);
@@ -89,23 +73,45 @@ public class PlayerRobot extends Entity2D
         if (inJump)
         {
             jumpTime += delta;
-            velocity.y -= 10;
+            velocity.y -= 8;
         }
 
-        if (inJump && jumpTime > TimeUtils.convert(0.78f, TimeUtils.getDefaultTimeUnit(), TimeUtils.Unit.SECONDS))
+        if (inJump && jumpTime > TimeUtils.convert(0.5f, TimeUtils.getDefaultTimeUnit(), TimeUtils.Unit.SECONDS))
             inJump = false;
 
         // Gravity
         velocity.y += 4;
 
-        // Prevent moving out of the bounds
-        Vector2 position = getPosition();
-        position.x = MathUtils.clamp(position.x, 0, 800-2*48);
-        setPosition(position);
-
         setVelocity(velocity);
 
+        followCamera();
+
         onGround = false;
+    }
+
+    private void followCamera()
+    {
+        Graphics2D g2d = SilenceEngine.graphics.getGraphics2D();
+        OrthoCam camera = g2d.getCamera();
+
+        Vector2 temp = Vector2.REUSABLE_STACK.pop();
+        temp.set(getPosition());
+
+        if (temp.x > PlayState.LEVEL_WIDTH - Main.VIEWPORT_WIDTH/2)
+            temp.x = PlayState.LEVEL_WIDTH - Main.VIEWPORT_WIDTH/2;
+
+        if (temp.x < Main.VIEWPORT_WIDTH/2)
+            temp.x = Main.VIEWPORT_WIDTH/2;
+
+        if (temp.y > PlayState.LEVEL_HEIGHT - Main.VIEWPORT_HEIGHT/2)
+            temp.y = PlayState.LEVEL_HEIGHT - Main.VIEWPORT_HEIGHT/2;
+
+        if (temp.y < Main.VIEWPORT_HEIGHT/2)
+            temp.y = Main.VIEWPORT_HEIGHT/2;
+
+        camera.center(temp);
+
+        Vector2.REUSABLE_STACK.push(temp);
     }
 
     @Override
@@ -113,9 +119,6 @@ public class PlayerRobot extends Entity2D
     {
         Graphics2D g2d = SilenceEngine.graphics.getGraphics2D();
         g2d.drawTexture(Resources.PLAYER_ROBOT.getCurrentFrame(), getX(), getY(), 2 * 48, 5 * 48, direction == Direction.LEFT, false);
-
-        if (inShield)
-            g2d.drawTexture(Resources.SHIELD, getX() + (direction == Direction.LEFT ? -48 : getWidth()), getY(), 48, 5*48, direction == Direction.LEFT, false);
     }
 
     @Override
@@ -130,33 +133,6 @@ public class PlayerRobot extends Entity2D
             setPosition(tPos);
 
             onGround = true;
-        }
-
-        if (other instanceof EnemyRobot)
-        {
-            Vector2 tCenter = getCenter();
-            Vector2 oCenter = other.getCenter();
-
-            Vector2 tPos = getPosition();
-            Vector2 oPos = other.getPosition();
-
-            if (tCenter.x < oCenter.x)
-                tPos.x = oPos.x - 2*48;
-            else
-                tPos.x = oPos.x + 2*48;
-
-            setPosition(tPos);
-        }
-
-        if (other instanceof EnemyBlades || other instanceof EnemySocks)
-        {
-            other.destroy();
-
-            if (!inShield)
-            {
-                PlayState.PLAYER_HEALTH -= 5;
-                Resources.HURT.play();
-            }
         }
     }
 }

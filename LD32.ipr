@@ -1,18 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="ArtifactManager">
-    <artifact type="jar" name="LD32:jar">
-      <output-path>$PROJECT_DIR$/out/artifacts/LD32_jar</output-path>
-      <root id="archive" name="LD32.jar">
-        <element id="module-output" name="LD32" />
-        <element id="extracted-dir" path="$PROJECT_DIR$/libs/jogg-0.0.7.jar" path-in-jar="/" />
-        <element id="extracted-dir" path="$PROJECT_DIR$/libs/jorbis-0.0.17-2.jar" path-in-jar="/" />
-        <element id="extracted-dir" path="$PROJECT_DIR$/libs/lwjgl.jar" path-in-jar="/" />
-        <element id="extracted-dir" path="$PROJECT_DIR$/libs/SilenceEngine.jar" path-in-jar="/" />
-        <element id="extracted-dir" path="$PROJECT_DIR$/libs/lwjgl-natives.jar" path-in-jar="/" />
-      </root>
-    </artifact>
-  </component>
   <component name="CompilerConfiguration">
     <resourceExtensions />
     <wildcardResourcePatterns>
@@ -163,12 +150,6 @@
         <default-constraints vsize-policy="6" hsize-policy="0" anchor="0" fill="2" />
       </item>
     </group>
-  </component>
-  <component name="ProjectCodeStyleSettingsManager">
-    <option name="PER_PROJECT_SETTINGS">
-      <value />
-    </option>
-    <option name="PREFERRED_PROJECT_CODE_STYLE" value="SilenceEngine" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="false">
     <OptionsSetting value="true" id="Add" />

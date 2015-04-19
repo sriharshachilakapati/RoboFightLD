@@ -1,14 +1,11 @@
 package com.shc.ld32.game;
 
-import com.shc.ld32.game.states.IntroState;
+import com.shc.ld32.game.states.PlayState;
 import com.shc.silenceengine.core.Display;
 import com.shc.silenceengine.core.Game;
 import com.shc.silenceengine.core.SilenceEngine;
-import com.shc.silenceengine.graphics.Batcher;
 import com.shc.silenceengine.graphics.Graphics2D;
 import com.shc.silenceengine.graphics.cameras.OrthoCam;
-import com.shc.silenceengine.graphics.opengl.Primitive;
-import com.shc.silenceengine.graphics.opengl.Texture;
 import com.shc.silenceengine.input.Keyboard;
 
 /**
@@ -16,53 +13,23 @@ import com.shc.silenceengine.input.Keyboard;
  */
 public class Main extends Game
 {
+    public static float VIEWPORT_WIDTH;
+    public static float VIEWPORT_HEIGHT;
+
     @Override
     public void init()
     {
-        Display.setTitle("LudumDare #32 Game - RoboFight");
-
+        Display.setTitle("LudumDare #32 Game");
         Resources.init();
 
-        setGameState(new IntroState());
+        setGameState(new PlayState());
     }
 
     @Override
     public void update(float delta)
     {
-        Display.setTitle("LudumDare #32 game - RoboFight | UPS: " + getUPS() + " | FPS: " + getFPS());
-
-        if (Keyboard.isClicked(Keyboard.KEY_F1))
-        {
-            Display.setFullScreen(!Display.isFullScreen());
-
-            if (Display.isFullScreen())
-                Display.hideCursor();
-            else
-                Display.showCursor();
-
-            resize();
-        }
-    }
-
-    @Override
-    public void render(float delta, Batcher batcher)
-    {
-        Resources.BACKGROUND.bind();
-
-        batcher.begin(Primitive.TRIANGLE_FAN);
-        {
-            batcher.vertex(-1, 1);
-            batcher.texCoord(0, 0);
-            batcher.vertex(1, 1);
-            batcher.texCoord(1, 0);
-            batcher.vertex(1, -1);
-            batcher.texCoord(1, 1);
-            batcher.vertex(-1, -1);
-            batcher.texCoord(0, 1);
-        }
-        batcher.end();
-
-        Texture.EMPTY.bind();
+        if (Keyboard.isClicked(Keyboard.KEY_ESCAPE))
+            Game.end();
     }
 
     @Override
@@ -85,21 +52,18 @@ public class Main extends Game
 
         float aspectRatio = Display.getAspectRatio();
 
-        float viewportWidth, viewportHeight;
-
         if (displayWidth < displayHeight)
         {
-            viewportWidth = canvasWidth;
-            viewportHeight = canvasWidth / aspectRatio;
+            VIEWPORT_WIDTH = canvasWidth;
+            VIEWPORT_HEIGHT = canvasWidth / aspectRatio;
         }
         else
         {
-            viewportWidth = canvasHeight * aspectRatio;
-            viewportHeight = canvasHeight;
+            VIEWPORT_WIDTH = canvasHeight * aspectRatio;
+            VIEWPORT_HEIGHT = canvasHeight;
         }
 
-        cam.initProjection(viewportWidth, viewportHeight);
-        cam.center(400, 300);
+        cam.initProjection(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
     }
 
     public static void main(String[] args)
